@@ -1,0 +1,17 @@
+---
+import Base from '../layouts/Base.astro';
+import { site } from '../data/site';
+---
+
+<Base title={site.name} description={site.description} path="/">
+  <main class="wrap hub">
+    <img class="hub-robot" src="/robot.svg" width="104" height="128" alt="nativemind robot" />
+    <h1 class="hub-name">{site.name}</h1>
+    <p class="tagline">
+      {site.tagline.map((line) => <span>{line}</span>)}
+    </p>
+    <nav class="link-stack" aria-label="Links">
+      {site.links.map((link) => <a class="btn" href={link.url}>{link.label}</a>)}
+    </nav>
+  </main>
+</Base>

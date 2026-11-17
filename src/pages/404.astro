@@ -1,0 +1,14 @@
+---
+import Base from '../layouts/Base.astro';
+---
+
+<Base title="Page not found" description="This page doesn't exist." path="/404" noindex>
+  <main class="wrap not-found">
+    <p class="label">404</p>
+    <h1>This page doesn't exist.</h1>
+    <p>Check that the link matches the one in your DMs exactly, or start from the home page.</p>
+    <nav class="link-stack" aria-label="Links">
+      <a class="btn" href="/">Back home</a>
+    </nav>
+  </main>
+</Base>

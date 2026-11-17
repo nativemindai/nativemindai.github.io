@@ -1,0 +1,125 @@
+---
+import type { CollectionEntry } from 'astro:content';
+import Base from './Base.astro';
+import { site } from '../data/site';
+import { promptBoxes } from '../lib/prompt-box';
+
+interface Props {
+  guide: CollectionEntry<'guides'>;
+}
+
+const { guide } = Astro.props;
+const { keyword, title, hook, disclaimer, reel_date, updated, sources, links } = guide.data;
+const body = promptBoxes(await Astro.slots.render('default'));
+
+const factsAsOf = (updated ?? reel_date).toLocaleDateString('en-US', {
+  year: 'numeric',
+  month: 'long',
+  day: 'numeric',
+  timeZone: 'UTC',
+});
+---
+
+<Base title={title} description={hook} path={`/${guide.id}`} noindex ogType="article">
+  <main class="wrap guide">
+    <header class="guide-head">
+      <p class="label">COMMENTED "<span class="keyword">{keyword}</span>"?</p>
+      <h1>{title}</h1>
+    </header>
+
+    <article class="guide-body" set:html={body} />
+
+    {
+      links && links.length > 0 && (
+        <nav class="link-stack" aria-label="Links">
+          {links.map((link) => (
+            <a class="btn" href={link.url}>
+              <span>
+                {link.label}&nbsp;<span aria-hidden="true">→</span>
+              </span>
+            </a>
+          ))}
+        </nav>
+      )
+    }
+
+    {disclaimer === 'financial' && <p class="disclaimer">Not financial advice. Facts as of {factsAsOf}.</p>}
+
+    {
+      sources && sources.length > 0 && (
+        <section class="sources" aria-labelledby="sources-label">
+          <p class="label" id="sources-label">SOURCES</p>
+          <ol>
+            {sources.map((source) => (
+              <li>
+                <a href={source.url}>{source.label}</a>
+              </li>
+            ))}
+          </ol>
+        </section>
+      )
+    }
+
+    <a class="follow" href={site.instagram.url}>
+      <img src="/robot.svg" width="39" height="48" alt="" />
+      <span>Follow {site.instagram.handle} for the next one</span>
+    </a>
+  </main>
+
+  <script is:inline>
+    // COPY buttons on prompt boxes (see src/lib/prompt-box.ts).
+    // Instagram's in-app browser can block the Clipboard API, so: Clipboard API,
+    // then the older execCommand copy, then select the text for a manual copy.
+    document.addEventListener('click', function (event) {
+      var button = event.target.closest('[data-copy]');
+      if (!button) return;
+      var box = button.closest('.prompt');
+      var pre = box.querySelector('pre');
+      var text = pre.textContent;
+
+      function copied() {
+        button.textContent = 'COPIED';
+        clearTimeout(button.resetTimer);
+        button.resetTimer = setTimeout(function () {
+          button.textContent = 'COPY';
+        }, 2000);
+      }
+
+      function legacyCopy() {
+        var area = document.createElement('textarea');
+        area.value = text;
+        area.setAttribute('readonly', '');
+        area.style.cssText = 'position:fixed;top:0;left:0;opacity:0;font-size:16px';
+        document.body.appendChild(area);
+        area.select();
+        area.setSelectionRange(0, text.length);
+        var ok = false;
+        try {
+          ok = document.execCommand('copy');
+        } catch (e) {}
+        document.body.removeChild(area);
+        return ok;
+      }
+
+      function manualCopy() {
+        var range = document.createRange();
+        range.selectNodeContents(pre);
+        var selection = window.getSelection();
+        selection.removeAllRanges();
+        selection.addRange(range);
+        box.querySelector('.copy-hint').hidden = false;
+      }
+
+      function fallback() {
+        if (legacyCopy()) copied();
+        else manualCopy();
+      }
+
+      if (navigator.clipboard && window.isSecureContext) {
+        navigator.clipboard.writeText(text).then(copied, fallback);
+      } else {
+        fallback();
+      }
+    });
+  </script>
+</Base>
